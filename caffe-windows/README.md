@@ -1,3 +1,14 @@
+#Additional Layers
+- resize layer
+- unpooling layer
+- batch renormalize layer
+- mean squared relative loss layer
+
+#Additional Features
+- set log file
+- adaptive learning rate control
+
+
 # Windows Caffe
 
 **This is an experimental, communtity based branch led by Guillaume Dumont (@willyd). It is a work-in-progress.**
