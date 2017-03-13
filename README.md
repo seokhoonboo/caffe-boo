@@ -1,5 +1,5 @@
 #Init
-- it is copied from BVLC/caffe-windows at 2017.03.13
+- it is copied from https://github.com/BVLC/caffe/tree/windows at 2017.03.13
 
 #Additional Layers
 - resize layer
