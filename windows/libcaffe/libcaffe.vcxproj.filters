@@ -108,9 +108,6 @@
     <ClCompile Include="..\..\src\caffe\parallel.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\caffe\data_reader.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\caffe\util\blocking_queue.cpp">
       <Filter>src\util</Filter>
     </ClCompile>
@@ -338,6 +335,18 @@
     </ClCompile>
     <ClCompile Include="..\..\src\caffe\solver_factory.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\caffe\layers\batch_renorm_layer.cpp">
+      <Filter>src\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\caffe\layers\mean_squared_relative_loss_layer.cpp">
+      <Filter>src\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\caffe\layers\resize_layer.cpp">
+      <Filter>src\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\caffe\layers\unpooling_layer.cpp">
+      <Filter>src\layers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -641,6 +650,18 @@
     <ClInclude Include="..\..\include\caffe\layers\scale_layer.hpp">
       <Filter>include\layers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\caffe\layers\batch_renorm_layer.hpp">
+      <Filter>include\layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\caffe\layers\mean_squared_relative_loss_layer.hpp">
+      <Filter>include\layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\caffe\layers\resize_layer.hpp">
+      <Filter>include\layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\caffe\layers\unpooling_layer.hpp">
+      <Filter>include\layers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="..\..\src\caffe\layers\contrastive_loss_layer.cu">
@@ -813,6 +834,18 @@
     </CudaCompile>
     <CudaCompile Include="..\..\src\caffe\solvers\sgd_solver.cu">
       <Filter>cu\solvers</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\..\src\caffe\layers\batch_renorm_layer.cu">
+      <Filter>cu\layers</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\..\src\caffe\layers\mean_squared_relative_loss_layer.cu">
+      <Filter>cu\layers</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\..\src\caffe\layers\resize_layer.cu">
+      <Filter>cu\layers</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\..\src\caffe\layers\unpooling_layer.cu">
+      <Filter>cu\layers</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>

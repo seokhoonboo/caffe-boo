@@ -211,6 +211,28 @@ void Solver<Dtype>::Step(int iters) {
       loss += net_->ForwardBackward();
     }
     loss /= param_.iter_size();
+
+	//for adaptive lr control  //rsd : relative standard deviation
+	if (this->param_.lr_policy() == "adaptive") {
+		if (this->iter_ == 0 || this->param_.reset_controled_lr())
+		{
+			this->last_controled_lr = this->param_.base_lr();
+			this->under_calculation_loss_sum = 0;
+			this->pre_term_loss_average = -1;
+			this->term_start_iter = this->iter_;
+			this->ignored_iter_count = 0;
+			this->lr_control_term = 0;
+
+			this->param_.set_reset_controled_lr(false);
+		}
+		if (std::isnan(loss) || std::isinf(loss) || (this->param_.max_loss() != -1 && loss>this->param_.max_loss()))
+			this->ignored_iter_count++;
+		else
+		{
+			this->under_calculation_loss_sum += loss;
+		}
+	}
+
     // average the loss across iterations for smoothed reporting
     UpdateSmoothedLoss(loss, start_iter, average_loss);
     if (display) {

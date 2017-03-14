@@ -5,6 +5,19 @@
 
 namespace caffe {
 
+	template <typename Dtype>
+	void EuclideanLossLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+		const vector<Blob<Dtype>*>& top) {
+
+		// LossLayers have a non-zero (1) loss by default.
+		if (this->layer_param_.loss_weight_size() == 0) {
+			this->layer_param_.add_loss_weight(Dtype(1));
+		}
+
+		ignore_min = this->layer_param_.euclidean_loss_param().ignore_value_min();
+		ignore_max = this->layer_param_.euclidean_loss_param().ignore_value_max();
+	}
+
 template <typename Dtype>
 void EuclideanLossLayer<Dtype>::Reshape(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
@@ -18,13 +31,29 @@ template <typename Dtype>
 void EuclideanLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   int count = bottom[0]->count();
+  const Dtype* bt0 = bottom[0]->cpu_data();
+  const Dtype* bt1 = bottom[1]->cpu_data();
+
   caffe_sub(
-      count,
-      bottom[0]->cpu_data(),
-      bottom[1]->cpu_data(),
-      diff_.mutable_cpu_data());
+	  count,
+	  bt0,
+	  bt1,
+	  diff_.mutable_cpu_data());
+
+  if (ignore_min <= ignore_max)
+  {
+	  for (int i = 0; i < count; i++)
+	  {
+		  if (ignore_min <= bt1[i] && bt1[i] <= ignore_max)
+		  {
+			  diff_.mutable_cpu_data()[i] = 0;
+		  }
+	  }
+  }
+
   Dtype dot = caffe_cpu_dot(count, diff_.cpu_data(), diff_.cpu_data());
   Dtype loss = dot / bottom[0]->num() / Dtype(2);
+
   top[0]->mutable_cpu_data()[0] = loss;
 }
 
@@ -34,7 +63,8 @@ void EuclideanLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   for (int i = 0; i < 2; ++i) {
     if (propagate_down[i]) {
       const Dtype sign = (i == 0) ? 1 : -1;
-      const Dtype alpha = sign * top[0]->cpu_diff()[0] / bottom[i]->num();
+	  Dtype alpha = sign * top[0]->cpu_diff()[0] / (bottom[i]->num());
+
       caffe_cpu_axpby(
           bottom[i]->count(),              // count
           alpha,                              // alpha

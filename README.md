@@ -1,15 +1,13 @@
 #Init
 - it is copied from https://github.com/BVLC/caffe/tree/windows at 2017.03.13
 
-#Additional Layers
+#Additional Features
 - resize layer
 - unpooling layer
 - batch renormalize layer
 - mean squared relative loss layer
-
-#Additional Features
-- set log file
 - adaptive learning rate control
+- add ignore-range feature to EuclideanLossLayer
 
 
 # Windows Caffe

@@ -42,6 +42,9 @@ class EuclideanLossLayer : public LossLayer<Dtype> {
  public:
   explicit EuclideanLossLayer(const LayerParameter& param)
       : LossLayer<Dtype>(param), diff_() {}
+
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+	  const vector<Blob<Dtype>*>& top);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
@@ -100,6 +103,8 @@ class EuclideanLossLayer : public LossLayer<Dtype> {
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
   Blob<Dtype> diff_;
+  float ignore_min;
+  float ignore_max;
 };
 
 }  // namespace caffe

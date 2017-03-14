@@ -94,6 +94,14 @@ class Solver {
    */
   virtual inline const char* type() const { return ""; }
 
+  //for adaptive lr control  //rsd : relative standard deviation
+  float under_calculation_loss_sum;
+  float pre_term_loss_average;
+  float last_controled_lr;
+  int term_start_iter;
+  int ignored_iter_count;
+  int lr_control_term;
+
  protected:
   // Make and apply the update value for the current iteration.
   virtual void ApplyUpdate() = 0;

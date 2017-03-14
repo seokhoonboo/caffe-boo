@@ -242,6 +242,16 @@ message SolverParameter {
 
   // Overlap compute and communication for data parallel training
   optional bool layer_wise_reduce = 41 [default = true];
+
+  //for adaptive lr control  //rsd : relative standard deviation
+  optional int32 lr_control_size = 42 [default = -1];
+  optional int32 initial_learning_term = 43 [default = 1];
+  optional float max_loss= 44 [default=-1];
+  optional float lr_decrease_factor= 45 [default=-1];
+  optional float lr_increase_factor= 46 [default=-1];
+  optional float min_loss_diff= 47 [default=-1];
+  optional float max_loss_diff= 48 [default=-1];
+  optional bool reset_controled_lr = 49 [default=false];  
 }
 
 // A message that stores the solver snapshots
@@ -250,6 +260,14 @@ message SolverState {
   optional string learned_net = 2; // The file that stores the learned net.
   repeated BlobProto history = 3; // The history for sgd solvers
   optional int32 current_step = 4 [default = 0]; // The current step for learning rate
+
+  //for adaptive lr control  //rsd : relative standard deviation
+  optional float under_calculation_loss_sum = 5 [default=-1];
+  optional float pre_term_loss_average = 6 [default=-1];
+  optional float last_controled_lr = 7 [default=-1];
+  optional int32 term_start_iter = 8 [default=-1];
+  optional int32 ignored_iter_count = 9 [default=-1];
+  optional int32 lr_control_term = 10 [default=0];
 }
 
 enum Phase {
@@ -309,7 +327,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 147 (last added: recurrent_param)
+// LayerParameter next available layer-specific ID: 153 (last added: recurrent_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -406,7 +424,77 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
   optional WindowDataParameter window_data_param = 129;
+
+  optional EuclideanLossParameter euclidean_loss_param = 148;
+  optional UnpoolingParameter unpooling_param =  149;
+  optional BatchReNormParameter batch_renorm_param =  150;
+  optional ResizeParameter resize_param =  151;
+  optional MeanSquaredRelativeLossParameter mean_squared_relative_loss_param =  152;
 }
+
+message MeanSquaredRelativeLossParameter {
+  optional float ignore_value_min = 1 [default =1];
+  optional float ignore_value_max = 2 [default =0];
+}
+
+message ResizeParameter {
+   enum InterpolationMethod {
+    NN=0;
+	LINEAR=1;
+  }
+  optional InterpolationMethod interpolation = 1 [default = NN]; 
+  optional uint32 height = 2;
+  optional uint32 width = 3;
+}
+
+message BatchReNormParameter {
+  optional bool use_global_stats = 1;
+ 
+  optional float moving_average_fraction = 2 [default = .99];
+  optional float eps = 3 [default = 1e-5];
+
+  //r_max=1 and d_max=0 until iter_to_init.
+  optional uint32 iter_to_init = 4 [default = 1000];
+  optional uint32 iter_to_r_max = 5 [default = 10000];
+  optional uint32 iter_to_d_max = 6 [default = 10000];
+  optional float r_max = 7 [default = 3];
+  optional float d_max = 8 [default = 5];
+}
+
+// Message that stores parameters used by UnpoolingLayer
+message UnpoolingParameter {
+  enum UnpoolMethod {
+    MAX = 0;
+    AVE = 1;
+    TILE= 2;
+  }
+  optional UnpoolMethod unpool = 1 [default = MAX]; // The pooling method
+  // Pad, kernel size, and stride are all given as a single value for equal
+  // dimensions in height and width or as Y, X pairs.
+  optional uint32 pad = 4 [default = 0]; // The padding size (equal in Y, X)
+  optional uint32 pad_h = 9 [default = 0]; // The padding height
+  optional uint32 pad_w = 10 [default = 0]; // The padding width
+  optional uint32 kernel_size = 2; // The kernel size (square)
+  optional uint32 kernel_h = 5; // The kernel height
+  optional uint32 kernel_w = 6; // The kernel width
+  optional uint32 stride = 3 [default = 1]; // The stride (equal in Y, X)
+  optional uint32 stride_h = 7; // The stride height
+  optional uint32 stride_w = 8; // The stride width
+  optional uint32 unpool_size = 12; // destined unpooled map size
+  optional uint32 unpool_h = 13; // destined unpooled map height
+  optional uint32 unpool_w = 14; // destined unpooled map width
+  enum Engine {
+    DEFAULT = 0;
+    CAFFE = 1;
+  }
+  optional Engine engine = 11 [default = DEFAULT];
+}
+
+message EuclideanLossParameter {
+  optional float ignore_value_min = 1[default =1];
+  optional float ignore_value_max = 2[default =0];
+}
+
 
 // Message that stores parameters used to apply transformation
 // to the data layer's data

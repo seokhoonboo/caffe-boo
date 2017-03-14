@@ -56,7 +56,48 @@ Dtype SGDSolver<Dtype>::GetLearningRate() {
     rate = this->param_.base_lr() * (Dtype(1.) /
         (Dtype(1.) + exp(-this->param_.gamma() * (Dtype(this->iter_) -
           Dtype(this->param_.stepsize())))));
-  } else {
+  }
+  else if (lr_policy == "adaptive") {
+	  if (this->iter_ - this->term_start_iter - this->ignored_iter_count + 1 >= this->param_.lr_control_size())
+	  {
+		  float loss_average
+			  = this->under_calculation_loss_sum / (this->iter_ - this->term_start_iter - this->ignored_iter_count + 1);
+		  if (this->lr_control_term >= this->param_.initial_learning_term())
+		  {
+			  float loss_diff_rate = (this->pre_term_loss_average - loss_average) / this->pre_term_loss_average;
+			  LOG(INFO) << "\n- Iteration : " << this->iter_ << " Control learning rate, current lr :" << this->last_controled_lr;
+			  LOG(INFO) << "- loss_diff_rate : (" << this->pre_term_loss_average << "-" << loss_average << ")/" << this->pre_term_loss_average << "=" << loss_diff_rate;
+			  LOG(INFO) << "- Max loss diff : " << this->param_.max_loss_diff() << "   Min loss diff : " << this->param_.min_loss_diff();
+		
+			  if (this->param_.max_loss_diff() != -1 && loss_diff_rate > this->param_.max_loss_diff())
+			  {
+				  this->last_controled_lr *= this->param_.lr_increase_factor();
+				  LOG(INFO) << "- Learning rate is increased, current lr : "<<this->last_controled_lr;
+			  }
+			  else if (this->param_.min_loss_diff() != -1 && loss_diff_rate < this->param_.min_loss_diff())
+			  {
+				  this->last_controled_lr *= this->param_.lr_decrease_factor();
+				  LOG(INFO) << "- Learning rate is decreased, current lr : " << this->last_controled_lr;
+			  }
+			  else
+			  {
+				  LOG(INFO) << "- Learning rate is kept\n\n";
+			  }
+		  }
+		  else
+		  {
+			  LOG(INFO) << "- Iteration : "<<this->iter_<<"It's initial term, Learning rate is kept, loss average : " <<  loss_average;
+		  }
+
+		  this->lr_control_term++;
+		  this->pre_term_loss_average = loss_average;
+		  this->under_calculation_loss_sum = 0;
+		  this->term_start_iter = this->iter_ + 1;
+		  this->ignored_iter_count = 0;
+	  }
+	  rate = this->last_controled_lr;
+  }
+  else {
     LOG(FATAL) << "Unknown learning rate policy: " << lr_policy;
   }
   return rate;
@@ -263,6 +304,15 @@ void SGDSolver<Dtype>::SnapshotSolverStateToBinaryProto(
   state.set_iter(this->iter_);
   state.set_learned_net(model_filename);
   state.set_current_step(this->current_step_);
+
+  //for adaptive lr control  //rsd : relative standard deviation
+  state.set_under_calculation_loss_sum(this->under_calculation_loss_sum);
+  state.set_pre_term_loss_average(this->pre_term_loss_average);
+  state.set_last_controled_lr(this->last_controled_lr);
+  state.set_term_start_iter(this->term_start_iter);
+  state.set_ignored_iter_count(this->ignored_iter_count);
+  state.set_lr_control_term(this->lr_control_term);
+
   state.clear_history();
   for (int i = 0; i < history_.size(); ++i) {
     // Add history
