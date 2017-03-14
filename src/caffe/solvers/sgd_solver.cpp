@@ -65,7 +65,7 @@ Dtype SGDSolver<Dtype>::GetLearningRate() {
 		  if (this->lr_control_term >= this->param_.initial_learning_term())
 		  {
 			  float loss_diff_rate = (this->pre_term_loss_average - loss_average) / this->pre_term_loss_average;
-			  LOG(INFO) << "\n- Iteration : " << this->iter_ << " Control learning rate, current lr :" << this->last_controled_lr;
+			  LOG(INFO) << "- Iteration : " << this->iter_ << " Control learning rate, current lr :" << this->last_controled_lr;
 			  LOG(INFO) << "- loss_diff_rate : (" << this->pre_term_loss_average << "-" << loss_average << ")/" << this->pre_term_loss_average << "=" << loss_diff_rate;
 			  LOG(INFO) << "- Max loss diff : " << this->param_.max_loss_diff() << "   Min loss diff : " << this->param_.min_loss_diff();
 		
