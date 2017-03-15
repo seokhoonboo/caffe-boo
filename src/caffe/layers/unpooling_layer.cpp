@@ -5,12 +5,6 @@
 #include "caffe/layers/unpooling_layer.hpp"
 #include "caffe/util/math_functions.hpp"
 
-// #include "caffe/common.hpp"
-// #include "caffe/layer.hpp"
-// #include "caffe/syncedmem.hpp"
-// #include "caffe/util/math_functions.hpp"
-// #include "caffe/vision_layers.hpp"
-
 namespace caffe {
 
 	using std::min;
@@ -35,11 +29,6 @@ namespace caffe {
 			&& unpool_param.has_stride_w())
 			|| (!unpool_param.has_stride_h() && !unpool_param.has_stride_w()))
 			<< "Stride is stride OR stride_h and stride_w are required.";
-		/*CHECK((!unpool_param.has_unpool_size() && unpool_param.has_unpool_h()
-			&& unpool_param.has_unpool_w())
-			|| (unpool_param.has_unpool_size() && !unpool_param.has_unpool_h()
-			&& !unpool_param.has_unpool_w()))
-			<< "Unpool is unpool_size OR unpool_h and unpool_w are required.";*/
 
 		if (unpool_param.has_kernel_size()) {
 			kernel_h_ = kernel_w_ = unpool_param.kernel_size();

@@ -1,13 +1,49 @@
 #Init
-- it is copied from https://github.com/BVLC/caffe/tree/windows at 2017.03.13
+- It is copied from https://github.com/BVLC/caffe/tree/windows at 2017.03.13
 
 #Additional Features
-- resize layer
-- unpooling layer
-- batch renormalize layer
-- mean squared relative loss layer
-- adaptive learning rate control
-- add ignore-range feature to EuclideanLossLayer
+- **Resize layer**
+
+  - Layer type: **"Resize"**
+  - Resize 2D layer to a specific size
+  - Parameters: height, width, method(NN, LINEAR)
+
+- **Unpooling layer**
+
+  - Layer type: **"Unpooling"**
+
+  - It is referenced from https://github.com/HyeonwooNoh/caffe
+  - Unpool-operation
+  - Parameters: pad, kernel_size, stride, unpool_size
+
+- **Batch renormalize layer**
+
+  - Layer type: **"BatchReNorm"**
+  - Implementation of https://arxiv.org/abs/1702.03275
+  - Renormalize batch-normalization to follow global-normalization
+  - Parameters:  use_global_stats, eps, iter_to_init, iter_to_r_max, iter_to_d_max, r_max, d_max
+
+- **Mean squared relative loss layer**
+
+  - Layer type: **"MeanSquaredRelativeLoss"**
+  - Compute mean squared relative error loss from two inputs
+  - $Loss=E(((Y-T)/T)^2)$
+  - Parameters: ignore_value_min, ignore_value_max
+  - Elements with value between ignore_value_min and ignore_value_max are excluded from the loss calculation
+
+- Add ignore-range feature to EuclideanLossLayer
+
+  - Additional parameters: ignore_value_min, ignore_value_max
+  - Elements with value between ignore_value_min and ignore_value_max are excluded from the loss calculation
+
+- **Adaptive learning rate control**
+
+  - lr_policy: **"adaptive"**
+  - Adjust learning rate using relative decrement of train loss
+  - $RelativeLossDecrement=$
+    $(PreTermLossAverage-CurrentTermLossAverage)/PreTermLossAverage$
+  - It is recorded in solver state
+  - Parameters: lr_control_size, initial_learning_term, max_loss, lr_decrease_factor, lr_increase_factor, min_loss_diff, max_loss_diff, reset_controled_lr
 
 
 # Windows Caffe
@@ -39,15 +75,15 @@ Prebuilt binaries can be downloaded from the latest CI build on appveyor for the
 
 ### Requirements
 
- - Visual Studio 2013 or 2015
- - [CMake](https://cmake.org/) 3.4 or higher (Visual Studio and [Ninja](https://ninja-build.org/) generators are supported)
+- Visual Studio 2013 or 2015
+- [CMake](https://cmake.org/) 3.4 or higher (Visual Studio and [Ninja](https://ninja-build.org/) generators are supported)
 
 ### Optional Dependencies
 
- - Python for the pycaffe interface. Anaconda Python 2.7 or 3.5 x64 (or Miniconda)
- - Matlab for the matcaffe interface.
- - CUDA 7.5 or 8.0 (use CUDA 8 if using Visual Studio 2015)
- - cuDNN v5
+- Python for the pycaffe interface. Anaconda Python 2.7 or 3.5 x64 (or Miniconda)
+- Matlab for the matcaffe interface.
+- CUDA 7.5 or 8.0 (use CUDA 8 if using Visual Studio 2015)
+- cuDNN v5
 
  We assume that `cmake.exe` and `python.exe` are on your `PATH`.
 
