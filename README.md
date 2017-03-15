@@ -6,14 +6,14 @@
 
   - Layer type: **"Resize"**
   - Resize 2D layer to a specific size
-  - Parameters: height, width, method(NN, LINEAR)
+  - Parameters: height, width, interpolation(method: NN, LINEAR)
 
 - **Unpooling layer**
 
   - Layer type: **"Unpooling"**
   - It is referenced from https://github.com/HyeonwooNoh/caffe
   - Unpool-operation
-  - Parameters: pad, kernel_size, stride, unpool_size
+  - Parameters: pad, kernel_size, stride, unpool_size, unpool(method: MAX, AVE, TILE)
 
 - **Batch renormalize layer**
 
