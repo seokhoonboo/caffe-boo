@@ -27,7 +27,7 @@
 
   - Layer type: **"MeanSquaredRelativeLoss"**
   - Compute mean squared relative error loss from two inputs
-  - $ Loss=E(((Y-T)/T)^2) $
+  - ***Loss=E(((Y-T)/T)^2)***
   - Parameters: ignore_value_min, ignore_value_max
   - Elements with value between ignore_value_min and ignore_value_max are excluded from the loss calculation
 
@@ -40,8 +40,7 @@
 
   - lr_policy: **"adaptive"**
   - Adjust learning rate using relative decrement of train loss
-  - $ RelativeLossDecrement= $
-    $ (PreTermLossAverage-CurrentTermLossAverage)/PreTermLossAverage $
+  - ***RelativeLossDecrement=(PreTermLossAverage-CurrentTermLossAverage)/PreTermLossAverage***
   - It is recorded in solver state
   - Parameters: lr_control_size, initial_learning_term, max_loss, lr_decrease_factor, lr_increase_factor, min_loss_diff, max_loss_diff, reset_controled_lr
 
