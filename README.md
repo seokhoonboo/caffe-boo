@@ -11,7 +11,6 @@
 - **Unpooling layer**
 
   - Layer type: **"Unpooling"**
-
   - It is referenced from https://github.com/HyeonwooNoh/caffe
   - Unpool-operation
   - Parameters: pad, kernel_size, stride, unpool_size
