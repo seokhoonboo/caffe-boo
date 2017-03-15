@@ -1,7 +1,7 @@
-#Init
+# Init
 - It is copied from https://github.com/BVLC/caffe/tree/windows at 2017.03.13
 
-#Additional Features
+# Additional Features
 - **Resize layer**
 
   - Layer type: **"Resize"**
