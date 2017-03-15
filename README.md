@@ -26,9 +26,7 @@
 
   - Layer type: **"MeanSquaredRelativeLoss"**
   - Compute mean squared relative error loss from two inputs
-  - $$
-  Loss=E(((Y-T)/T)^2)
-  $$
+  - ***Loss=E(((Y-T)/T)^2)***
   - Parameters: ignore_value_min, ignore_value_max
   - Elements with value between ignore_value_min and ignore_value_max are excluded from the loss calculation
 
