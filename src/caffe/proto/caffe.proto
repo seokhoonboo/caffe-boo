@@ -436,6 +436,7 @@ message MeanSquaredRelativeLossParameter {
 //Elements with value between ignore_value_min and ignore_value_max are excluded from the loss calculation
   optional float ignore_value_min = 1 [default =1];
   optional float ignore_value_max = 2 [default =0];
+  optional float eps=3 [default = 1e-5];
 }
 
 message ResizeParameter {

@@ -15,6 +15,7 @@ namespace caffe {
 
 		ignore_min = this->layer_param_.mean_squared_relative_loss_param().ignore_value_min();
 		ignore_max = this->layer_param_.mean_squared_relative_loss_param().ignore_value_max();
+		eps = this->layer_param_.mean_squared_relative_loss_param().eps();
 	}
 
 	template <typename Dtype>
@@ -31,25 +32,27 @@ namespace caffe {
 	void MeanSquaredRelativeLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		const vector<Blob<Dtype>*>& top) {
 		int count = bottom[0]->count();
-		const Dtype* bt0 = bottom[0]->cpu_data();
-		const Dtype* bt1 = bottom[1]->cpu_data();
+		
+		caffe_mul(count, bottom[0]->cpu_data(), bottom[1]->cpu_data(), bottoms_.mutable_cpu_data());//bottom0*bottom1
+		caffe_mul(count, bottom[1]->cpu_data(), bottom[1]->cpu_data(), bottoms_.mutable_cpu_diff());//bottom1*bottom1
+		caffe_add_scalar(count, Dtype(eps), bottoms_.mutable_cpu_data()); //bottom0*bottom1+eps
+		caffe_add_scalar(count, Dtype(eps), bottoms_.mutable_cpu_diff()); //bottom1*bottom1+eps
+		caffe_powx(count, bottoms_.mutable_cpu_diff(), Dtype(0.5), diff_.mutable_cpu_diff()); //(bottom1*bottom1+eps)^0.5
 
-		caffe_copy(count, bottom[0]->cpu_data(), bottoms_.mutable_cpu_data());
-		caffe_copy(count, bottom[1]->cpu_data(), bottoms_.mutable_cpu_diff());
 		caffe_sub(count,bottom[0]->cpu_data(),bottom[1]->cpu_data(),diff_.mutable_cpu_data());
 
 		if (ignore_min <= ignore_max)
 		{
 			for (int i = 0; i < count; i++)
 			{
-				if (ignore_min <= bt1[i] && bt1[i] <= ignore_max)
+				if (ignore_min <= bottom[1]->cpu_data()[i] && bottom[1]->cpu_data()[i] <= ignore_max)
 				{
 					diff_.mutable_cpu_data()[i] = 0;
 				}
 			}
 		}
 
-		caffe_div(count, diff_.cpu_data(),bottom[1]->cpu_data(),diff_.mutable_cpu_data());
+		caffe_div(count, diff_.cpu_data(), diff_.cpu_diff(), diff_.mutable_cpu_data());   //(y-t)/(bottom1*bottom1+eps)^0.5
 		
 		Dtype dot = caffe_cpu_dot(count, diff_.cpu_data(), diff_.cpu_data());
 		Dtype loss = dot / bottom[0]->num();
@@ -65,13 +68,13 @@ namespace caffe {
 		Dtype alpha = top[0]->mutable_cpu_diff()[0] * 2 / (bottom[0]->num());
 		
 		if (propagate_down[0]) {
-			caffe_div(count, diff_.cpu_data(), bottoms_.cpu_diff(), bottom[0]->mutable_cpu_diff());
+			caffe_div(count, diff_.cpu_data(), diff_.cpu_diff(), bottom[0]->mutable_cpu_diff());
 			caffe_scal(count, alpha, bottom[0]->mutable_cpu_diff());
 		}
 		if (propagate_down[1]) {
 			if (!propagate_down[0])
 			{
-				caffe_div(count, diff_.cpu_data(), bottoms_.cpu_diff(), bottom[1]->mutable_cpu_diff());
+				caffe_div(count, diff_.cpu_data(), diff_.cpu_diff(), bottom[1]->mutable_cpu_diff());
 				caffe_scal(count, -alpha, bottom[1]->mutable_cpu_diff());
 			}
 			else

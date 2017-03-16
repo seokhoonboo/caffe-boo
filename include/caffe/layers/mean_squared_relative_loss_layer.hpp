@@ -46,6 +46,7 @@ namespace caffe {
 		Blob<Dtype> diff_, bottoms_;
 		float ignore_min;
 		float ignore_max;
+		float eps;
 	};
 
 }  // namespace caffe

@@ -24,20 +24,22 @@ namespace caffe {
 	void MeanSquaredRelativeLossLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 		const vector<Blob<Dtype>*>& top) {
 		int count = bottom[0]->count();
-		const Dtype* bt0 = bottom[0]->gpu_data();
-		const Dtype* bt1 = bottom[1]->gpu_data();
 
-		caffe_copy(count, bottom[0]->gpu_data(), bottoms_.mutable_gpu_data());
-		caffe_copy(count, bottom[1]->gpu_data(), bottoms_.mutable_gpu_diff());
+		caffe_gpu_mul(count, bottom[0]->gpu_data(), bottom[1]->gpu_data(), bottoms_.mutable_gpu_data());//bottom0*bottom1
+		caffe_gpu_mul(count, bottom[1]->gpu_data(), bottom[1]->gpu_data(), bottoms_.mutable_gpu_diff());//bottom1*bottom1
+		caffe_gpu_add_scalar(count, Dtype(eps), bottoms_.mutable_gpu_data()); //bottom0*bottom1+eps
+		caffe_gpu_add_scalar(count, Dtype(eps), bottoms_.mutable_gpu_diff()); //bottom1*bottom1+eps
+		caffe_gpu_powx(count, bottoms_.mutable_gpu_diff(), Dtype(0.5), diff_.mutable_gpu_diff()); //(bottom1*bottom1+eps)^0.5
+
 		caffe_gpu_sub(count, bottom[0]->gpu_data(), bottom[1]->gpu_data(), diff_.mutable_gpu_data());
 
 		if (ignore_min <= ignore_max)
 		{
 			MSR_IGNORE<Dtype> << <CAFFE_GET_BLOCKS(count), CAFFE_CUDA_NUM_THREADS >> >(
-			count, bt1, diff_.mutable_gpu_data(), ignore_min, ignore_max);	
+				count, bottom[1]->gpu_data(), diff_.mutable_gpu_data(), ignore_min, ignore_max);
 		}
 
-		caffe_gpu_div(count, diff_.gpu_data(), bottom[1]->gpu_data(), diff_.mutable_gpu_data());
+		caffe_gpu_div(count, diff_.gpu_data(), diff_.gpu_diff(), diff_.mutable_gpu_data());
 
 		Dtype dot;
 		caffe_gpu_dot(count, diff_.gpu_data(), diff_.gpu_data(), &dot);
@@ -55,13 +57,13 @@ namespace caffe {
 		Dtype alpha = top[0]->mutable_cpu_diff()[0] * 2 / (bottom[0]->num());
 		
 		if (propagate_down[0]) {
-			caffe_gpu_div(count, diff_.gpu_data(), bottoms_.gpu_diff(), bottom[0]->mutable_gpu_diff());
+			caffe_gpu_div(count, diff_.gpu_data(), diff_.gpu_diff(), bottom[0]->mutable_gpu_diff());
 			caffe_gpu_scal(count, alpha, bottom[0]->mutable_gpu_diff());
 		}
 		if (propagate_down[1]) {
 			if (!propagate_down[0])
 			{
-				caffe_gpu_div(count, diff_.gpu_data(), bottoms_.gpu_diff(), bottom[1]->mutable_gpu_diff());
+				caffe_gpu_div(count, diff_.gpu_data(), diff_.gpu_diff(), bottom[1]->mutable_gpu_diff());
 				caffe_gpu_scal(count, -alpha, bottom[1]->mutable_gpu_diff());
 			}
 			else
