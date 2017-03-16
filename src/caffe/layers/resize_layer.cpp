@@ -10,9 +10,17 @@ namespace caffe {
 	template <typename Dtype>
 	void ResizeLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 		const vector<Blob<Dtype>*>& top) {
-		ResizeParameter resize_param = this->layer_param_.resize_param();
-		top_height_ = resize_param.height();
-		top_width_ = resize_param.width();
+		if (bottom.size() == 1)
+		{
+			ResizeParameter resize_param = this->layer_param_.resize_param();
+			top_height_ = resize_param.height();
+			top_width_ = resize_param.width();
+		}
+		else
+		{
+			top_height_ = bottom[1]->height();
+			top_width_ = bottom[1]->width();
+		}
 	}
 
 	template <typename Dtype>

@@ -243,12 +243,12 @@ message SolverParameter {
   // Overlap compute and communication for data parallel training
   optional bool layer_wise_reduce = 41 [default = true];
 
-  //for adaptive lr control  //rsd : relative standard deviation
+  //for adaptive lr control  
   optional int32 lr_control_size = 42 [default = -1];
-  optional int32 initial_learning_term = 43 [default = 1];
-  optional float max_loss= 44 [default=-1];
-  optional float lr_decrease_factor= 45 [default=-1];
-  optional float lr_increase_factor= 46 [default=-1];
+  optional int32 initial_learning_term = 43 [default = 1];  //iter to stabilization
+  optional float max_loss= 44 [default=-1];	//ignore loss larger than it 
+  optional float lr_decrease_factor= 45 [default=-1];	//if loss_diff is smaller than min_loss_diff, lr'=lr*lr_decrease_factor
+  optional float lr_increase_factor= 46 [default=-1];		//if loss_diff is bigger than max_loss_diff, lr'=lr*lr_increase_factor
   optional float min_loss_diff= 47 [default=-1];
   optional float max_loss_diff= 48 [default=-1];
   optional bool reset_controled_lr = 49 [default=false];  
@@ -261,7 +261,7 @@ message SolverState {
   repeated BlobProto history = 3; // The history for sgd solvers
   optional int32 current_step = 4 [default = 0]; // The current step for learning rate
 
-  //for adaptive lr control  //rsd : relative standard deviation
+  //for adaptive lr control 
   optional float under_calculation_loss_sum = 5 [default=-1];
   optional float pre_term_loss_average = 6 [default=-1];
   optional float last_controled_lr = 7 [default=-1];
@@ -433,6 +433,7 @@ message LayerParameter {
 }
 
 message MeanSquaredRelativeLossParameter {
+//Elements with value between ignore_value_min and ignore_value_max are excluded from the loss calculation
   optional float ignore_value_min = 1 [default =1];
   optional float ignore_value_max = 2 [default =0];
 }
@@ -443,17 +444,20 @@ message ResizeParameter {
 	LINEAR=1;
   }
   optional InterpolationMethod interpolation = 1 [default = NN]; 
-  optional uint32 height = 2;
-  optional uint32 width = 3;
+  //Width and height can be specified by placing a second bottom. If the second bottom is placed, the parameter input is ignored
+  optional uint32 height = 2[default = 0]; 
+  optional uint32 width = 3[default = 0]; 
 }
 
 message BatchReNormParameter {
   optional bool use_global_stats = 1;
- 
+  // How much does the moving average decay each iteration?
   optional float moving_average_fraction = 2 [default = .99];
   optional float eps = 3 [default = 1e-5];
 
   //r_max=1 and d_max=0 until iter_to_init.
+  //iteration is counted at backward operation,you should consider iter_size to set each iter-parameter
+  //'r' and 'd' are gradually increased in the iter_to_init ~ iter_to_max.
   optional uint32 iter_to_init = 4 [default = 1000];
   optional uint32 iter_to_r_max = 5 [default = 10000];
   optional uint32 iter_to_d_max = 6 [default = 10000];
@@ -491,6 +495,7 @@ message UnpoolingParameter {
 }
 
 message EuclideanLossParameter {
+//Elements with value between ignore_value_min and ignore_value_max are excluded from the loss calculation
   optional float ignore_value_min = 1[default =1];
   optional float ignore_value_max = 2[default =0];
 }
