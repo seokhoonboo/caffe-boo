@@ -45,8 +45,8 @@ namespace caffe {
 			const int c = (index / top_width_ / top_height_) % channels;
 			const int n = index / top_width_ / top_height_ / channels;
 
-			Dtype h_ = __max(0, __min(bot_h - 1, bot_hDtop_h*(ph + 1) - 1));
-			Dtype w_ = __max(0, __min(bot_w - 1, bot_wDtop_w*(pw + 1) - 1));
+			Dtype h_ = __max(0, __min(bot_h - 1, bot_hDtop_h*(ph + 1) - 1.5));
+			Dtype w_ = __max(0, __min(bot_w - 1, bot_wDtop_w*(pw + 1) - 1.5));
 			int top = __max(0, __min(bot_h - 1, int(h_)));
 			int bot = __max(0, __min(bot_h - 1, top + 1));
 			int left = __max(0, __min(bot_w - 1, int(w_)));
@@ -145,8 +145,8 @@ namespace caffe {
 			const int c = (index / top_width_ / top_height_) % channels;
 			const int n = index / top_width_ / top_height_ / channels;
 
-			Dtype h_ = __max(0, __min(bot_h - 1, bot_hDtop_h*(ph + 1) - 1));
-			Dtype w_ = __max(0, __min(bot_w - 1, bot_wDtop_w*(pw + 1) - 1));
+			Dtype h_ = __max(0, __min(bot_h - 1, bot_hDtop_h*(ph + 1) - 1.5));
+			Dtype w_ = __max(0, __min(bot_w - 1, bot_wDtop_w*(pw + 1) - 1.5));
 			int top = __max(0, __min(bot_h - 1, int(h_)));
 			int bot = __max(0, __min(bot_h - 1, top + 1));
 			int left = __max(0, __min(bot_w - 1, int(w_)));
