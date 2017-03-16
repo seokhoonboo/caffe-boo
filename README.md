@@ -7,6 +7,7 @@
   - Layer type: **"Resize"**
   - Resize 2D layer to a specific size
   - Parameters: height, width, interpolation(method: NN, LINEAR)
+  - Width and height can be specified by placing a second bottom. If the second bottom is placed, the parameter input is ignored
 
 - **Unpooling layer**
 
