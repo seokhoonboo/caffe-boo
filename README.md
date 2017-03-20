@@ -22,7 +22,7 @@
   - Implementation of https://arxiv.org/abs/1702.03275
   - Renormalize batch-normalization to follow global-normalization
   - Parameters:  use_global_stats, eps, iter_to_init, iter_to_r_max, iter_to_d_max, r_max, d_max
-
+  - For training, lr_murt and decay_mult must be set to 0 for all four parameters(learnable parameters in layer).
 - **Mean squared relative loss layer**
 
   - Layer type: **"MeanSquaredRelativeLoss"**

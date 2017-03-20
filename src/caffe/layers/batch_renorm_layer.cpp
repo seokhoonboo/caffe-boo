@@ -136,35 +136,14 @@ namespace caffe {
 			caffe_cpu_gemv<Dtype>(CblasTrans, num, channels_, 1.,
 				num_by_chans_.cpu_data(), batch_sum_multiplier_.cpu_data(), 0.,
 				variance_.mutable_cpu_data());  // E((X_EX)^2)
-			caffe_add_scalar(variance_.count(), eps_, variance_.mutable_cpu_data());
 			
 			if (iter >= iter_to_init_)
 			{
-				Dtype cur_r_max = __max(1,__min(1 + (iter - iter_to_init_+1)*(r_max_ - 1) / (iter_to_r_max_ - iter_to_init_), r_max_));
-				Dtype cur_r_min = 1. / cur_r_max;
-				Dtype cur_d_max = __max(0,__min((iter - iter_to_init_ + 1)*d_max_  / (iter_to_d_max_ - iter_to_init_), d_max_));
-				Dtype cur_d_min = -cur_d_max;
-
 				const Dtype scale_factor = 1. / this->blobs_[2]->cpu_data()[0];
-				caffe_cpu_scale(variance_.count(), scale_factor, this->blobs_[1]->cpu_data(), variance_.mutable_cpu_diff());
-				caffe_div(variance_.count(), variance_.cpu_data(), variance_.cpu_diff(), r_.mutable_cpu_data());
-				caffe_powx(variance_.count(), r_.cpu_data(), Dtype(0.5), r_.mutable_cpu_data());
-
-				caffe_copy(variance_.count(), mean_.cpu_data(), d_.mutable_cpu_data());
-				caffe_cpu_axpby(variance_.count(), Dtype(-scale_factor), this->blobs_[0]->cpu_data(), Dtype(1), d_.mutable_cpu_data());
-				caffe_powx(variance_.count(), variance_.cpu_diff(), Dtype(0.5), variance_.mutable_cpu_diff());
-				caffe_div(variance_.count(), d_.cpu_data(), variance_.cpu_diff(), d_.mutable_cpu_data());
-
-				for (int i = 0; i < variance_.count(); ++i)
-				{
-					r_.mutable_cpu_data()[i] = __min(cur_r_max, __max(r_.mutable_cpu_data()[i], cur_r_min));
-					d_.mutable_cpu_data()[i] = __min(cur_d_max, __max(d_.mutable_cpu_data()[i], cur_d_min));
-				}
-
-				caffe_copy(x_norm_.count(), top_data,
-					x_norm_.mutable_cpu_data());
+				caffe_cpu_scale(variance_.count(), scale_factor, this->blobs_[0]->cpu_data(), this->blobs_[0]->mutable_cpu_diff());
+				caffe_cpu_scale(variance_.count(), scale_factor, this->blobs_[1]->cpu_data(), this->blobs_[1]->mutable_cpu_diff());
 			}
-
+			
 			// compute and save moving average
 			this->blobs_[2]->mutable_cpu_data()[0] *= moving_average_fraction_;
 			this->blobs_[2]->mutable_cpu_data()[0] += 1;
@@ -178,9 +157,10 @@ namespace caffe {
 		}
 
 		// normalize variance
+		caffe_add_scalar(variance_.count(), eps_, variance_.mutable_cpu_data());
 		caffe_powx(variance_.count(), variance_.cpu_data(), Dtype(0.5),
 			variance_.mutable_cpu_data());
-
+		
 		// replicate variance to input size
 		caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, channels_, 1, 1,
 			batch_sum_multiplier_.cpu_data(), variance_.cpu_data(), 0.,
@@ -196,6 +176,26 @@ namespace caffe {
 
 		if (!use_global_stats_ && iter >= iter_to_init_)
 		{
+			Dtype cur_r_max = __max(1, __min(1 + (iter - iter_to_init_ + 1)*(r_max_ - 1) / (iter_to_r_max_ - iter_to_init_), r_max_));
+			Dtype cur_r_min = 1. / cur_r_max;
+			Dtype cur_d_max = __max(0, __min((iter - iter_to_init_ + 1)*d_max_ / (iter_to_d_max_ - iter_to_init_), d_max_));
+			Dtype cur_d_min = -cur_d_max;
+
+			caffe_add_scalar(variance_.count(), eps_, this->blobs_[1]->mutable_cpu_diff());
+			caffe_powx(variance_.count(), this->blobs_[1]->cpu_diff(), Dtype(0.5),this->blobs_[1]->mutable_cpu_diff());			
+
+			caffe_div(variance_.count(), variance_.cpu_data(), this->blobs_[1]->cpu_diff(), r_.mutable_cpu_data());
+	
+			caffe_copy(variance_.count(), mean_.cpu_data(), d_.mutable_cpu_data());
+			caffe_cpu_axpby(variance_.count(), Dtype(-1), this->blobs_[0]->cpu_diff(), Dtype(1), d_.mutable_cpu_data());
+			caffe_div(variance_.count(), d_.cpu_data(), this->blobs_[1]->cpu_diff(), d_.mutable_cpu_data());
+
+			for (int i = 0; i < variance_.count(); ++i)
+			{
+				r_.mutable_cpu_data()[i] = __min(cur_r_max, __max(r_.mutable_cpu_data()[i], cur_r_min));
+				d_.mutable_cpu_data()[i] = __min(cur_d_max, __max(d_.mutable_cpu_data()[i], cur_d_min));
+			}
+
 			caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, channels_, 1, 1,
 				batch_sum_multiplier_.cpu_data(), r_.cpu_data(), 0.,
 				num_by_chans_.mutable_cpu_data());
