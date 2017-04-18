@@ -327,7 +327,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 153 (last added: recurrent_param)
+// LayerParameter next available layer-specific ID: 154 (last added: recurrent_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -430,6 +430,41 @@ message LayerParameter {
   optional BatchReNormParameter batch_renorm_param =  150;
   optional ResizeParameter resize_param =  151;
   optional MeanSquaredRelativeLossParameter mean_squared_relative_loss_param =  152;
+  optional StochasticReNormParameter stochastic_renorm_param =  153;
+  optional ShortTermReNormParameter short_term_renorm_param =  154;
+  optional UpsampleParameter upsample_param = 155;
+  optional BNParameter bn_param = 156;
+}
+
+// Message that stores parameters used by BN (Batch Normalization)  layer
+message BNParameter {
+  enum BNMode {
+    LEARN = 0;
+    INFERENCE = 1;
+  }
+  optional BNMode bn_mode = 3 [default = LEARN];
+  optional FillerParameter scale_filler = 1;  // The filler for the scale
+  optional FillerParameter shift_filler = 2;  // The filler for the shift
+}
+
+message UpsampleParameter {
+  // DEPRECATED. No need to specify upsampling scale factors when
+  // exact output shape is given by upsample_h, upsample_w parameters.
+  optional uint32 scale = 1 [default = 2];
+  // DEPRECATED. No need to specify upsampling scale factors when
+  // exact output shape is given by upsample_h, upsample_w parameters.
+  optional uint32 scale_h = 2;
+  // DEPRECATED. No need to specify upsampling scale factors when
+  // exact output shape is given by upsample_h, upsample_w parameters.
+  optional uint32 scale_w = 3;
+  // DEPRECATED. Specify exact output height using upsample_h. This
+  // parameter only works when scale is 2
+  optional bool pad_out_h = 4 [default = false];
+  // DEPRECATED. Specify exact output width using upsample_w. This
+  // parameter only works when scale is 2
+  optional bool pad_out_w = 5 [default = false];
+  optional uint32 upsample_h = 6;
+  optional uint32 upsample_w = 7;
 }
 
 message MeanSquaredRelativeLossParameter {
@@ -437,6 +472,41 @@ message MeanSquaredRelativeLossParameter {
   optional float ignore_value_min = 1 [default =1];
   optional float ignore_value_max = 2 [default =0];
   optional float eps=3 [default = 1e-5];
+}
+
+message ShortTermReNormParameter {
+  optional bool use_global_stats = 1;
+  // How much does the moving average decay each iteration?
+  optional float moving_average_fraction = 2 [default = .99];
+  optional float short_term_moving_average_fraction = 3 [default = .8];
+  optional float eps = 4 [default = 1e-5];
+
+  //r_max=1 and d_max=0 until iter_to_init.
+  //iteration is counted at backward operation.
+  //if you use iter_size at 'solver.proto', you should set iter_size
+  //'r_max' and 'd_max' are gradually increased by step
+  optional uint32 iter_size = 5 [default = 1];
+  optional uint32 step_to_init = 6 [default = 1000];
+  optional float r_max_increase_step = 7 [default = 0.05];
+  optional float d_max_increase_step = 8 [default = 0.05];
+}
+
+message StochasticReNormParameter {
+  optional bool use_global_stats = 1;
+  // How much does the moving average decay each iteration?
+  optional float moving_average_fraction = 2 [default = .99];
+  optional float eps = 3 [default = 1e-5];
+
+  //r_max=1 and d_max=0 until iter_to_init.
+  //iteration is counted at backward operation.
+  //if you use iter_size at 'solver.proto', you should set iter_size
+  //'r_max' and 'd_max' are gradually increased by step
+  optional uint32 iter_size = 4 [default = 1];
+  optional uint32 step_to_init = 5 [default = 1000];
+  optional float r_max_increase_step = 6 [default = 0.05];
+  optional float d_max_increase_step = 7 [default = 0.05];
+  optional float mean_rng = 8 [default = 0.1];	//mean'=uniform(mean-std*mean_rng,mean+std*mean_rng)
+  optional float std_rng = 9 [default = 0.03];		//std'=uniform(std-std*std_rng,std+std*std_rng)
 }
 
 message ResizeParameter {
@@ -457,13 +527,15 @@ message BatchReNormParameter {
   optional float eps = 3 [default = 1e-5];
 
   //r_max=1 and d_max=0 until iter_to_init.
-  //iteration is counted at backward operation,you should consider iter_size to set each iter-parameter
-  //'r' and 'd' are gradually increased in the iter_to_init ~ iter_to_max.
-  optional uint32 iter_to_init = 4 [default = 1000];
-  optional uint32 iter_to_r_max = 5 [default = 10000];
-  optional uint32 iter_to_d_max = 6 [default = 10000];
-  optional float r_max = 7 [default = 3];
-  optional float d_max = 8 [default = 5];
+  //if you use iter_size at 'solver.proto', you should set iter_size
+  //'r_max' and 'd_max' are gradually increased by step
+  //'r' and 'd' are gradually increased in the step_to_init ~ step_to_max.
+  optional uint32 iter_size = 4 [default = 1];
+  optional uint32 step_to_init = 5 [default = 1000];
+  optional uint32 step_to_r_max = 6 [default = 10000];
+  optional uint32 step_to_d_max = 7 [default = 10000];
+  optional float r_max = 8 [default = 3];
+  optional float d_max = 9 [default = 5];
 }
 
 // Message that stores parameters used by UnpoolingLayer

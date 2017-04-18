@@ -357,6 +357,14 @@ void SGDSolver<Dtype>::RestoreSolverStateFromBinaryProto(
   SolverState state;
   ReadProtoFromBinaryFile(state_file, &state);
   this->iter_ = state.iter();
+
+  this->under_calculation_loss_sum = state.under_calculation_loss_sum();
+  this->pre_term_loss_average = state.pre_term_loss_average();
+  this->last_controled_lr = state.last_controled_lr();
+  this->term_start_iter = state.term_start_iter();
+  this->ignored_iter_count = state.ignored_iter_count();
+  this->lr_control_term = state.lr_control_term();
+
   if (state.has_learned_net()) {
     NetParameter net_param;
     ReadNetParamsFromBinaryFileOrDie(state.learned_net().c_str(), &net_param);

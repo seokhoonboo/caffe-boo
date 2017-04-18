@@ -1,16 +1,17 @@
 #include <algorithm>
 #include <vector>
 
-#include "caffe/layers/batch_renorm_layer.hpp"
+#include "caffe/layers/short_term_renorm_layer.hpp"
 #include "caffe/util/math_functions.hpp"
 
 namespace caffe {
 
 	template <typename Dtype>
-	void BatchReNormLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+	void ShortTermReNormLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
 		const vector<Blob<Dtype>*>& top) {
-		BatchReNormParameter param = this->layer_param_.batch_renorm_param();
+		ShortTermReNormParameter param = this->layer_param_.short_term_renorm_param();
 		moving_average_fraction_ = param.moving_average_fraction();
+		short_term_moving_average_fraction_ = param.short_term_moving_average_fraction();
 		use_global_stats_ = this->phase_ == TEST;
 		if (param.has_use_global_stats())
 			use_global_stats_ = param.use_global_stats();
@@ -19,26 +20,27 @@ namespace caffe {
 		else
 			channels_ = bottom[0]->shape(1);
 		eps_ = param.eps();
-		r_max_ = param.r_max();
-		d_max_ = param.d_max();
+		r_max_increase_step_ = param.r_max_increase_step();
+		d_max_increase_step_ = param.d_max_increase_step();
 		iter_size_ = param.iter_size();
 		step_to_init_ = param.step_to_init();
-		step_to_r_max_ = param.step_to_r_max();
-		step_to_d_max_ = param.step_to_d_max();
 
 		if (this->blobs_.size() > 0) {
 			LOG(INFO) << "Skipping parameter initialization";
 		}
 		else {
-			this->blobs_.resize(4);
+			this->blobs_.resize(7);
 			vector<int> sz;
 			sz.push_back(channels_);
-			this->blobs_[0].reset(new Blob<Dtype>(sz));
+			this->blobs_[0].reset(new Blob<Dtype>(sz));  //global mean
 			this->blobs_[1].reset(new Blob<Dtype>(sz));
+			this->blobs_[3].reset(new Blob<Dtype>(sz));
+			this->blobs_[4].reset(new Blob<Dtype>(sz));
 			sz[0] = 1;
 			this->blobs_[2].reset(new Blob<Dtype>(sz));
-			this->blobs_[3].reset(new Blob<Dtype>(sz));
-			for (int i = 0; i < 4; ++i) {
+			this->blobs_[5].reset(new Blob<Dtype>(sz));
+			this->blobs_[6].reset(new Blob<Dtype>(sz));
+			for (int i = 0; i < 7; ++i) {
 				caffe_set(this->blobs_[i]->count(), Dtype(0),
 					this->blobs_[i]->mutable_cpu_data());
 			}
@@ -59,7 +61,7 @@ namespace caffe {
 	}
 
 	template <typename Dtype>
-	void BatchReNormLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
+	void ShortTermReNormLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
 		const vector<Blob<Dtype>*>& top) {
 		if (bottom[0]->num_axes() >= 1)
 			CHECK_EQ(bottom[0]->shape(1), channels_);
@@ -76,8 +78,6 @@ namespace caffe {
 
 		sz[0] = bottom[0]->shape(0);
 		batch_sum_multiplier_.Reshape(sz);
-
-		
 
 		int spatial_dim = bottom[0]->count() / (channels_*bottom[0]->shape(0));
 		if (spatial_sum_multiplier_.num_axes() == 0 ||
@@ -99,13 +99,13 @@ namespace caffe {
 	}
 
 	template <typename Dtype>
-	void BatchReNormLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+	void ShortTermReNormLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 		const vector<Blob<Dtype>*>& top) {
 		const Dtype* bottom_data = bottom[0]->cpu_data();
 		Dtype* top_data = top[0]->mutable_cpu_data();
 		int num = bottom[0]->shape(0);
 		int spatial_dim = bottom[0]->count() / (bottom[0]->shape(0)*channels_);
-		int iter = this->blobs_[3]->cpu_data()[0];
+		int iter = this->blobs_[6]->cpu_data()[0];
 		int step = iter / iter_size_;
 		bool first_iter_in_step = (iter%iter_size_ == 0);
 
@@ -152,16 +152,16 @@ namespace caffe {
 			caffe_cpu_gemv<Dtype>(CblasTrans, num, channels_, 1.,
 				num_by_chans_.cpu_data(), batch_sum_multiplier_.cpu_data(), 0.,
 				variance_.mutable_cpu_data());  // E((X_EX)^2)
-			
+
 			if (step >= step_to_init_ && first_iter_in_step)
 			{
-				const Dtype scale_factor = 1. / this->blobs_[2]->cpu_data()[0];
-				caffe_cpu_scale(variance_.count(), scale_factor, this->blobs_[0]->cpu_data(), this->blobs_[0]->mutable_cpu_diff());
-				caffe_cpu_scale(variance_.count(), scale_factor, this->blobs_[1]->cpu_data(), this->blobs_[1]->mutable_cpu_diff());
-				caffe_add_scalar(variance_.count(), eps_, this->blobs_[1]->mutable_cpu_diff());
-				caffe_powx(variance_.count(), this->blobs_[1]->cpu_diff(), Dtype(0.5), this->blobs_[1]->mutable_cpu_diff());
+				const Dtype scale_factor = 1. / this->blobs_[5]->cpu_data()[0];
+				caffe_cpu_scale(variance_.count(), scale_factor, this->blobs_[3]->cpu_data(), this->blobs_[3]->mutable_cpu_diff());
+				caffe_cpu_scale(variance_.count(), scale_factor, this->blobs_[4]->cpu_data(), this->blobs_[4]->mutable_cpu_diff());
+				caffe_add_scalar(variance_.count(), eps_, this->blobs_[4]->mutable_cpu_diff());
+				caffe_powx(variance_.count(), this->blobs_[4]->cpu_diff(), Dtype(0.5), this->blobs_[4]->mutable_cpu_diff());
 			}
-			
+
 			// compute and save moving average
 			Dtype moving_average_fraction = first_iter_in_step ? moving_average_fraction_ : 1;
 			this->blobs_[2]->mutable_cpu_data()[0] *= moving_average_fraction;
@@ -173,13 +173,25 @@ namespace caffe {
 			caffe_cpu_axpby(variance_.count(), bias_correction_factor,
 				variance_.cpu_data(), moving_average_fraction,
 				this->blobs_[1]->mutable_cpu_data());
+
+			// compute and save moving average
+			Dtype short_term_moving_average_fraction = first_iter_in_step ? short_term_moving_average_fraction_ : 1;
+			this->blobs_[5]->mutable_cpu_data()[0] *= short_term_moving_average_fraction;
+			this->blobs_[5]->mutable_cpu_data()[0] += 1;
+			caffe_cpu_axpby(mean_.count(), Dtype(1), mean_.cpu_data(),
+				short_term_moving_average_fraction, this->blobs_[3]->mutable_cpu_data());
+			m = bottom[0]->count() / channels_;
+			bias_correction_factor = m > 1 ? Dtype(m) / (m - 1) : 1;
+			caffe_cpu_axpby(variance_.count(), bias_correction_factor,
+				variance_.cpu_data(), short_term_moving_average_fraction,
+				this->blobs_[4]->mutable_cpu_data());
 		}
 
 		// normalize variance
 		caffe_add_scalar(variance_.count(), eps_, variance_.mutable_cpu_data());
 		caffe_powx(variance_.count(), variance_.cpu_data(), Dtype(0.5),
 			variance_.mutable_cpu_data());
-		
+
 		// replicate variance to input size
 		caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, channels_, 1, 1,
 			batch_sum_multiplier_.cpu_data(), variance_.cpu_data(), 0.,
@@ -195,16 +207,16 @@ namespace caffe {
 
 		if (!use_global_stats_ && step >= step_to_init_)
 		{
-			Dtype cur_r_max = __max(1, __min(1 + (step - step_to_init_ + 1)*(r_max_ - 1) / (step_to_r_max_ - step_to_init_), r_max_));
+			Dtype cur_r_max = __min(FLT_MAX, (step - step_to_init_)*r_max_increase_step_ + 1);
 			Dtype cur_r_min = 1. / cur_r_max;
-			Dtype cur_d_max = __max(0, __min((step - step_to_init_ + 1)*d_max_ / (step_to_d_max_ - step_to_init_), d_max_));
+			Dtype cur_d_max = __min(FLT_MAX, (step - step_to_init_)*d_max_increase_step_);
 			Dtype cur_d_min = -cur_d_max;
 
-			caffe_div(variance_.count(), variance_.cpu_data(), this->blobs_[1]->cpu_diff(), r_.mutable_cpu_data());
-	
+			caffe_div(variance_.count(), variance_.cpu_data(), this->blobs_[4]->cpu_diff(), r_.mutable_cpu_data());
+
 			caffe_copy(variance_.count(), mean_.cpu_data(), d_.mutable_cpu_data());
-			caffe_cpu_axpby(variance_.count(), Dtype(-1), this->blobs_[0]->cpu_diff(), Dtype(1), d_.mutable_cpu_data());
-			caffe_div(variance_.count(), d_.cpu_data(), this->blobs_[1]->cpu_diff(), d_.mutable_cpu_data());
+			caffe_cpu_axpby(variance_.count(), Dtype(-1), this->blobs_[3]->cpu_diff(), Dtype(1), d_.mutable_cpu_data());
+			caffe_div(variance_.count(), d_.cpu_data(), this->blobs_[4]->cpu_diff(), d_.mutable_cpu_data());
 
 			for (int i = 0; i < variance_.count(); ++i)
 			{
@@ -231,11 +243,11 @@ namespace caffe {
 	}
 
 	template <typename Dtype>
-	void BatchReNormLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
+	void ShortTermReNormLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 		const vector<bool>& propagate_down,
 		const vector<Blob<Dtype>*>& bottom) {
 		const Dtype* top_diff;
-		int iter = this->blobs_[3]->cpu_data()[0];
+		int iter = this->blobs_[6]->cpu_data()[0];
 		int step = iter / iter_size_;
 
 		if (bottom[0] != top[0]) {
@@ -316,15 +328,15 @@ namespace caffe {
 		}
 
 		if (this->phase_ == TRAIN)
-			this->blobs_[3]->mutable_cpu_data()[0] += 1;
+			this->blobs_[6]->mutable_cpu_data()[0] += 1;
 
 	}
 
 
 #ifdef CPU_ONLY
-	STUB_GPU(BatchReNormLayer);
+	STUB_GPU(ShortTermReNormLayer);
 #endif
 
-	INSTANTIATE_CLASS(BatchReNormLayer);
-	REGISTER_LAYER_CLASS(BatchReNorm);
+	INSTANTIATE_CLASS(ShortTermReNormLayer);
+	REGISTER_LAYER_CLASS(ShortTermReNorm);
 }  // namespace caffe

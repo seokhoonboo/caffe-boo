@@ -348,6 +348,12 @@
     <ClCompile Include="..\..\src\caffe\layers\unpooling_layer.cpp">
       <Filter>src\layers</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\caffe\layers\stochastic_renorm_layer.cpp">
+      <Filter>src\layers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\caffe\layers\short_term_renorm_layer.cpp">
+      <Filter>src\layers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\caffe\proto\caffe.pb.h">
@@ -662,6 +668,12 @@
     <ClInclude Include="..\..\include\caffe\layers\unpooling_layer.hpp">
       <Filter>include\layers</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\caffe\layers\stochastic_renorm_layer.hpp">
+      <Filter>include\layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\caffe\layers\short_term_renorm_layer.hpp">
+      <Filter>include\layers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="..\..\src\caffe\layers\contrastive_loss_layer.cu">
@@ -844,11 +856,18 @@
     <CudaCompile Include="..\..\src\caffe\layers\resize_layer.cu">
       <Filter>cu\layers</Filter>
     </CudaCompile>
-    <CudaCompile Include="..\..\src\caffe\layers\unpooling_layer.cu">
+    <CudaCompile Include="..\..\src\caffe\layers\stochastic_renorm_layer.cu">
+      <Filter>cu\layers</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\..\src\caffe\layers\short_term_renorm_layer.cu">
+      <Filter>cu\layers</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\..\src\caffe\layers\upsample_layer.cu">
       <Filter>cu\layers</Filter>
     </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="..\..\src\caffe\proto\caffe.proto" />
   </ItemGroup>
 </Project>

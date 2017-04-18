@@ -131,6 +131,8 @@
     <ClCompile Include="..\..\src\caffe\layers\exp_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\filter_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\flatten_layer.cpp" />
+    <ClCompile Include="..\..\src\caffe\layers\short_term_renorm_layer.cpp" />
+    <ClCompile Include="..\..\src\caffe\layers\stochastic_renorm_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\hdf5_data_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\hdf5_output_layer.cpp" />
     <ClCompile Include="..\..\src\caffe\layers\hinge_loss_layer.cpp" />
@@ -238,6 +240,8 @@
     <ClInclude Include="..\..\include\caffe\layers\exp_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\filter_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\flatten_layer.hpp" />
+    <ClInclude Include="..\..\include\caffe\layers\short_term_renorm_layer.hpp" />
+    <ClInclude Include="..\..\include\caffe\layers\stochastic_renorm_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\hdf5_data_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\hdf5_output_layer.hpp" />
     <ClInclude Include="..\..\include\caffe\layers\hinge_loss_layer.hpp" />
@@ -362,13 +366,16 @@
     <CudaCompile Include="..\..\src\caffe\util\math_functions.cu" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\src\caffe\proto\caffe.proto" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="..\..\src\caffe\layers\batch_renorm_layer.cu" />
+    <CudaCompile Include="..\..\src\caffe\layers\short_term_renorm_layer.cu" />
+    <CudaCompile Include="..\..\src\caffe\layers\stochastic_renorm_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\mean_squared_relative_loss_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\resize_layer.cu" />
-    <CudaCompile Include="..\..\src\caffe\layers\unpooling_layer.cu" />
+    <CudaCompile Include="..\..\src\caffe\layers\upsample_layer.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(SolutionDir)\CommonSettings.targets" />

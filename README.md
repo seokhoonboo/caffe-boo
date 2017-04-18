@@ -21,8 +21,9 @@
   - Layer type: **"BatchReNorm"**
   - Implementation of https://arxiv.org/abs/1702.03275
   - Renormalize batch-normalization to follow global-normalization
-  - Parameters:  use_global_stats, eps, iter_to_init, iter_to_r_max, iter_to_d_max, r_max, d_max
-  - For training, lr_murt and decay_mult must be set to 0 for all four parameters(learnable parameters in layer).
+  - Parameters:  use_global_stats, moving_average_fraction, eps, iter_size, step_to_init, step_to_r__max, step_to_d_max, r_max, d_max
+  - For training, lr_murt and decay_mult are automatically set to zero
+
 - **Mean squared relative loss layer**
 
   - Layer type: **"MeanSquaredRelativeLoss"**

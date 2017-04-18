@@ -1,13 +1,14 @@
 #include <algorithm>
 #include <vector>
 
-#include "caffe/layers/batch_renorm_layer.hpp"
+#include "caffe/layers/short_term_renorm_layer.hpp"
 #include "caffe/util/math_functions.hpp"
+
 
 namespace caffe {
 
 	template <typename Dtype>
-	__global__ void R_D_CUT(const int n, Dtype* r, Dtype* d
+	__global__ void R_D_CUT_STR(const int n, Dtype* r, Dtype* d
 		, Dtype cur_r_max, Dtype cur_r_min, Dtype cur_d_max, Dtype cur_d_min) {
 		CUDA_KERNEL_LOOP(index, n) {
 			r[index] = __min(cur_r_max, __max(r[index], cur_r_min));
@@ -16,13 +17,13 @@ namespace caffe {
 	}
 
 	template <typename Dtype>
-	void BatchReNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+	void ShortTermReNormLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
 		const vector<Blob<Dtype>*>& top) {
 		const Dtype* bottom_data = bottom[0]->gpu_data();
 		Dtype* top_data = top[0]->mutable_gpu_data();
 		int num = bottom[0]->shape(0);
 		int spatial_dim = bottom[0]->count() / (channels_*bottom[0]->shape(0));
-		int iter = this->blobs_[3]->cpu_data()[0];
+		int iter = this->blobs_[6]->cpu_data()[0];
 		int step = iter / iter_size_;
 		bool first_iter_in_step = (iter%iter_size_ == 0);
 
@@ -73,15 +74,15 @@ namespace caffe {
 
 			if (step >= step_to_init_ && first_iter_in_step)
 			{
-				const Dtype scale_factor = 1. / this->blobs_[2]->cpu_data()[0];
-				caffe_gpu_scale(variance_.count(), scale_factor, this->blobs_[0]->gpu_data(), this->blobs_[0]->mutable_gpu_diff());
-				caffe_gpu_scale(variance_.count(), scale_factor, this->blobs_[1]->gpu_data(), this->blobs_[1]->mutable_gpu_diff());
-				caffe_gpu_add_scalar(variance_.count(), eps_, this->blobs_[1]->mutable_gpu_diff());
-				caffe_gpu_powx(variance_.count(), this->blobs_[1]->gpu_diff(), Dtype(0.5), this->blobs_[1]->mutable_gpu_diff());
+				const Dtype scale_factor = 1. / this->blobs_[5]->cpu_data()[0];
+				caffe_gpu_scale(variance_.count(), scale_factor, this->blobs_[3]->gpu_data(), this->blobs_[3]->mutable_gpu_diff());
+				caffe_gpu_scale(variance_.count(), scale_factor, this->blobs_[4]->gpu_data(), this->blobs_[4]->mutable_gpu_diff());
+				caffe_gpu_add_scalar(variance_.count(), eps_, this->blobs_[4]->mutable_gpu_diff());
+				caffe_gpu_powx(variance_.count(), this->blobs_[4]->gpu_diff(), Dtype(0.5), this->blobs_[4]->mutable_gpu_diff());
 			}
 
 			// compute and save moving average
-			Dtype moving_average_fraction = first_iter_in_step ? moving_average_fraction_ : 1.0;
+			Dtype moving_average_fraction = first_iter_in_step ? moving_average_fraction_ : 1;
 			this->blobs_[2]->mutable_cpu_data()[0] *= moving_average_fraction;
 			this->blobs_[2]->mutable_cpu_data()[0] += 1;
 			caffe_gpu_axpby(mean_.count(), Dtype(1), mean_.gpu_data(),
@@ -91,6 +92,18 @@ namespace caffe {
 			caffe_gpu_axpby(variance_.count(), bias_correction_factor,
 				variance_.gpu_data(), moving_average_fraction,
 				this->blobs_[1]->mutable_gpu_data());
+
+			// compute and save moving average
+			Dtype short_term_moving_average_fraction = first_iter_in_step ? short_term_moving_average_fraction_ : 1;
+			this->blobs_[5]->mutable_cpu_data()[0] *= short_term_moving_average_fraction;
+			this->blobs_[5]->mutable_cpu_data()[0] += 1;
+			caffe_gpu_axpby(mean_.count(), Dtype(1), mean_.gpu_data(),
+				short_term_moving_average_fraction, this->blobs_[3]->mutable_gpu_data());
+			m = bottom[0]->count() / channels_;
+			bias_correction_factor = m > 1 ? Dtype(m) / (m - 1) : 1;
+			caffe_gpu_axpby(variance_.count(), bias_correction_factor,
+				variance_.gpu_data(), short_term_moving_average_fraction,
+				this->blobs_[4]->mutable_gpu_data());
 		}
 
 		// normalize variance
@@ -113,18 +126,19 @@ namespace caffe {
 
 		if (!use_global_stats_ && step >= step_to_init_)
 		{
-			Dtype cur_r_max = __max(1, __min(1 + (step - step_to_init_ + 1)*(r_max_ - 1) / (step_to_r_max_ - step_to_init_), r_max_));
+			Dtype cur_r_max = __min(FLT_MAX, (step - step_to_init_)*r_max_increase_step_ + 1);
 			Dtype cur_r_min = 1. / cur_r_max;
-			Dtype cur_d_max = __max(0, __min((step - step_to_init_ + 1)*d_max_ / (step_to_d_max_ - step_to_init_), d_max_));
+			Dtype cur_d_max = __min(FLT_MAX, (step - step_to_init_)*d_max_increase_step_);
 			Dtype cur_d_min = -cur_d_max;
 
-			caffe_gpu_div(variance_.count(), variance_.gpu_data(), this->blobs_[1]->gpu_diff(), r_.mutable_gpu_data());
+
+			caffe_gpu_div(variance_.count(), variance_.gpu_data(), this->blobs_[4]->gpu_diff(), r_.mutable_gpu_data());
 
 			caffe_copy(variance_.count(), mean_.gpu_data(), d_.mutable_gpu_data());
-			caffe_gpu_axpby(variance_.count(), Dtype(-1), this->blobs_[0]->gpu_diff(), Dtype(1), d_.mutable_gpu_data());
-			caffe_gpu_div(variance_.count(), d_.gpu_data(), this->blobs_[1]->gpu_diff(), d_.mutable_gpu_data());
+			caffe_gpu_axpby(variance_.count(), Dtype(-1), this->blobs_[3]->gpu_diff(), Dtype(1), d_.mutable_gpu_data());
+			caffe_gpu_div(variance_.count(), d_.gpu_data(), this->blobs_[4]->gpu_diff(), d_.mutable_gpu_data());
 
-			R_D_CUT<Dtype> << <CAFFE_GET_BLOCKS(variance_.count()), CAFFE_CUDA_NUM_THREADS >> >(
+			R_D_CUT_STR<Dtype> << <CAFFE_GET_BLOCKS(variance_.count()), CAFFE_CUDA_NUM_THREADS >> >(
 				variance_.count(), r_.mutable_gpu_data(), d_.mutable_gpu_data(), cur_r_max, cur_r_min
 				, cur_d_max, cur_d_min);
 			CUDA_POST_KERNEL_CHECK;
@@ -148,11 +162,11 @@ namespace caffe {
 	}
 
 	template <typename Dtype>
-	void BatchReNormLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
+	void ShortTermReNormLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 		const vector<bool>& propagate_down,
 		const vector<Blob<Dtype>*>& bottom) {
 		const Dtype* top_diff;
-		int iter = this->blobs_[3]->cpu_data()[0];
+		int iter = this->blobs_[6]->cpu_data()[0];
 		int step = iter / iter_size_;
 
 		if (bottom[0] != top[0]) {
@@ -227,7 +241,7 @@ namespace caffe {
 		// note: temp_ still contains sqrt(var(X)+eps), computed during the forward
 		// pass.
 		caffe_gpu_div(temp_.count(), bottom_diff, temp_.gpu_data(), bottom_diff);
-		
+
 
 		if (!use_global_stats_ && step >= step_to_init_)
 		{
@@ -235,11 +249,11 @@ namespace caffe {
 		}
 
 		if (this->phase_ == TRAIN)
-			this->blobs_[3]->mutable_cpu_data()[0] += 1;
+			this->blobs_[6]->mutable_cpu_data()[0] += 1;
 
 	}
 
-	INSTANTIATE_LAYER_GPU_FUNCS(BatchReNormLayer);
+	INSTANTIATE_LAYER_GPU_FUNCS(ShortTermReNormLayer);
 
 
 }  // namespace caffe
