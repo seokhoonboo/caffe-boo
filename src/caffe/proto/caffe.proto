@@ -432,40 +432,9 @@ message LayerParameter {
   optional MeanSquaredRelativeLossParameter mean_squared_relative_loss_param =  152;
   optional StochasticReNormParameter stochastic_renorm_param =  153;
   optional ShortTermReNormParameter short_term_renorm_param =  154;
-  optional UpsampleParameter upsample_param = 155;
-  optional BNParameter bn_param = 156;
 }
 
-// Message that stores parameters used by BN (Batch Normalization)  layer
-message BNParameter {
-  enum BNMode {
-    LEARN = 0;
-    INFERENCE = 1;
-  }
-  optional BNMode bn_mode = 3 [default = LEARN];
-  optional FillerParameter scale_filler = 1;  // The filler for the scale
-  optional FillerParameter shift_filler = 2;  // The filler for the shift
-}
 
-message UpsampleParameter {
-  // DEPRECATED. No need to specify upsampling scale factors when
-  // exact output shape is given by upsample_h, upsample_w parameters.
-  optional uint32 scale = 1 [default = 2];
-  // DEPRECATED. No need to specify upsampling scale factors when
-  // exact output shape is given by upsample_h, upsample_w parameters.
-  optional uint32 scale_h = 2;
-  // DEPRECATED. No need to specify upsampling scale factors when
-  // exact output shape is given by upsample_h, upsample_w parameters.
-  optional uint32 scale_w = 3;
-  // DEPRECATED. Specify exact output height using upsample_h. This
-  // parameter only works when scale is 2
-  optional bool pad_out_h = 4 [default = false];
-  // DEPRECATED. Specify exact output width using upsample_w. This
-  // parameter only works when scale is 2
-  optional bool pad_out_w = 5 [default = false];
-  optional uint32 upsample_h = 6;
-  optional uint32 upsample_w = 7;
-}
 
 message MeanSquaredRelativeLossParameter {
 //Elements with value between ignore_value_min and ignore_value_max are excluded from the loss calculation
