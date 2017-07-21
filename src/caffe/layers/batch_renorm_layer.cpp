@@ -56,6 +56,7 @@ namespace caffe {
 					<< "parameters.";
 			}
 		}
+		int i = 0;
 	}
 
 	template <typename Dtype>
