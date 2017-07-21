@@ -202,7 +202,6 @@
     <ClInclude Include="..\..\include\caffe\blob.hpp" />
     <ClInclude Include="..\..\include\caffe\caffe.hpp" />
     <ClInclude Include="..\..\include\caffe\common.hpp" />
-    <ClInclude Include="..\..\include\caffe\data_reader.hpp" />
     <ClInclude Include="..\..\include\caffe\data_transformer.hpp" />
     <ClInclude Include="..\..\include\caffe\filler.hpp" />
     <ClInclude Include="..\..\include\caffe\internal_thread.hpp" />
@@ -375,7 +374,6 @@
     <CudaCompile Include="..\..\src\caffe\layers\stochastic_renorm_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\mean_squared_relative_loss_layer.cu" />
     <CudaCompile Include="..\..\src\caffe\layers\resize_layer.cu" />
-    <CudaCompile Include="..\..\src\caffe\layers\upsample_layer.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(SolutionDir)\CommonSettings.targets" />

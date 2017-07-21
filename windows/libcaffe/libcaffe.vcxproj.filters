@@ -611,9 +611,6 @@
     <ClInclude Include="..\..\include\caffe\common.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\caffe\data_reader.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\caffe\data_transformer.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -860,9 +857,6 @@
       <Filter>cu\layers</Filter>
     </CudaCompile>
     <CudaCompile Include="..\..\src\caffe\layers\short_term_renorm_layer.cu">
-      <Filter>cu\layers</Filter>
-    </CudaCompile>
-    <CudaCompile Include="..\..\src\caffe\layers\upsample_layer.cu">
       <Filter>cu\layers</Filter>
     </CudaCompile>
   </ItemGroup>
