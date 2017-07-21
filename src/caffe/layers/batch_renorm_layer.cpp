@@ -57,7 +57,7 @@ namespace caffe {
 			}
 		}
 		int k = 0;
-		int i = 0;
+
 	}
 
 	template <typename Dtype>
