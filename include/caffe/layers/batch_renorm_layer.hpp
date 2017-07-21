@@ -47,6 +47,7 @@ namespace caffe {
 		Blob<Dtype> batch_sum_multiplier_;
 		Blob<Dtype> num_by_chans_;
 		Blob<Dtype> spatial_sum_multiplier_;
+		int i;
 	};
 
 }  // namespace caffe
